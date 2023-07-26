@@ -96,12 +96,14 @@ services:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     labels:
-      - "traefik.http.routers.erprouter.rule=Host(`${SITE}`)"
       - "traefik.enable=true"
       - "traefik.docker.network=rproxy"
-      - "traefik.http.services.erpservice.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.no-robots.headers.customresponseheaders.X-Robots-Tag=none"
+      - "traefik.http.routers.erprouter.rule=Host(`${SITE}`)"
       - "traefik.http.routers.erprouter.middlewares=no-robots"
+      - "traefik.http.routers.erprouter.tls=true"
+      - "traefik.http.routers.erprouter.tls.certresolver=le"
+      - "traefik.http.services.erpservice.loadbalancer.server.port=8080"
     depends_on:
       - backend
       - websocket
