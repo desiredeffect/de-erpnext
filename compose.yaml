@@ -48,7 +48,6 @@ services:
 
   create-site:
     <<: *backend_defaults
-    image: frappe/erpnext:v14.31.3
     restart: "no"
     entrypoint:
       - bash
