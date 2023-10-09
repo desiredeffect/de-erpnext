@@ -22,3 +22,6 @@ development/*
 *.pyc
 __pycache__
 venv
+
+# .env so that private vars are not tracked
+.env
