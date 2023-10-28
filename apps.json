@@ -8,7 +8,7 @@
     "branch": "version-14"
   },
   {
-    "url": "https://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@github.com/desiredeffect/de_macrs",
+    "url": "https://${DE_MACRS_PAT}@github.com/desiredeffect/de_macrs",
     "branch": "main"
   }
 ]
