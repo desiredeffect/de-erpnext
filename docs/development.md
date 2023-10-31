@@ -82,16 +82,16 @@ To setup frappe framework version 14 bench set `PYENV_VERSION` environment varia
 bench init --skip-redis-config-generation --frappe-branch version-14 frappe-bench
 # Or set environment versions explicitly
 nvm use v16
-PYENV_VERSION=3.10.12 bench init --skip-redis-config-generation --frappe-branch version-14 frappe-bench
+PYENV_VERSION=3.10.13 bench init --skip-redis-config-generation --frappe-branch version-14 frappe-bench
 # Switch directory
 cd frappe-bench
 ```
 
-To setup frappe framework version 13 bench set `PYENV_VERSION` environment variable to `3.9.9` and use NodeJS version 14,
+To setup frappe framework version 13 bench set `PYENV_VERSION` environment variable to `3.9.17` and use NodeJS version 14,
 
 ```shell
 nvm use v14
-PYENV_VERSION=3.9.9 bench init --skip-redis-config-generation --frappe-branch version-13 frappe-bench
+PYENV_VERSION=3.9.17 bench init --skip-redis-config-generation --frappe-branch version-13 frappe-bench
 cd frappe-bench
 ```
 
@@ -103,7 +103,7 @@ We need to tell bench to use the right containers instead of localhost. Run the 
 bench set-config -g db_host mariadb
 bench set-config -g redis_cache redis://redis-cache:6379
 bench set-config -g redis_queue redis://redis-queue:6379
-bench set-config -g redis_socketio redis://redis-socketio:6379
+bench set-config -g redis_socketio redis://redis-queue:6379
 ```
 
 For any reason the above commands fail, set the values in `common_site_config.json` manually.
@@ -113,7 +113,7 @@ For any reason the above commands fail, set the values in `common_site_config.js
   "db_host": "mariadb",
   "redis_cache": "redis://redis-cache:6379",
   "redis_queue": "redis://redis-queue:6379",
-  "redis_socketio": "redis://redis-socketio:6379"
+  "redis_socketio": "redis://redis-queue:6379"
 }
 ```
 
@@ -142,7 +142,7 @@ sed -i '/redis/d' ./Procfile
 You can create a new site with the following command:
 
 ```shell
-bench new-site sitename --no-mariadb-socket
+bench new-site --no-mariadb-socket sitename
 ```
 
 sitename MUST end with .localhost for trying deployments locally.
@@ -150,17 +150,17 @@ sitename MUST end with .localhost for trying deployments locally.
 for example:
 
 ```shell
-bench new-site mysite.localhost --no-mariadb-socket
+bench new-site --no-mariadb-socket development.localhost
 ```
 
 The same command can be run non-interactively as well:
 
 ```shell
-bench new-site mysite.localhost --mariadb-root-password 123 --admin-password admin --no-mariadb-socket
+bench new-site --mariadb-root-password 123 --admin-password admin --no-mariadb-socket development.localhost
 ```
 
 The command will ask the MariaDB root password. The default root password is `123`.
-This will create a new site and a `mysite.localhost` directory under `frappe-bench/sites`.
+This will create a new site and a `development.localhost` directory under `frappe-bench/sites`.
 The option `--no-mariadb-socket` will configure site's database credentials to work with docker.
 You may need to configure your system /etc/hosts if you're on Linux, Mac, or its Windows equivalent.
 
@@ -169,7 +169,7 @@ To setup site with PostgreSQL as database use option `--db-type postgres` and `-
 Example:
 
 ```shell
-bench new-site mypgsql.localhost --db-type postgres --db-host postgresql
+bench new-site --db-type postgres --db-host postgresql mypgsql.localhost
 ```
 
 To avoid entering postgresql username and root password, set it in `common_site_config.json`,
@@ -186,8 +186,8 @@ Note: If PostgreSQL is not required, the postgresql service / container can be s
 To develop a new app, the last step will be setting the site into developer mode. Documentation is available at [this link](https://frappe.io/docs/user/en/guides/app-development/how-enable-developer-mode-in-frappe).
 
 ```shell
-bench --site mysite.localhost set-config developer_mode 1
-bench --site mysite.localhost clear-cache
+bench --site development.localhost set-config developer_mode 1
+bench --site development.localhost clear-cache
 ```
 
 ### Install an app
@@ -201,21 +201,21 @@ To install custom app
 ```shell
 # --branch is optional, use it to point to branch on custom app repository
 bench get-app --branch version-12 https://github.com/myusername/myapp
-bench --site mysite.localhost install-app myapp
+bench --site development.localhost install-app myapp
 ```
 
 At the time of this writing, the Payments app has been factored out of the Version 14 ERPNext app and is now a separate app. ERPNext will not install it.
 
 ```shell
 bench get-app --branch version-14 --resolve-deps erpnext
-bench --site mysite.localhost install-app erpnext
+bench --site development.localhost install-app erpnext
 ```
 
 To install ERPNext (from the version-13 branch):
 
 ```shell
 bench get-app --branch version-13 erpnext
-bench --site mysite.localhost install-app erpnext
+bench --site development.localhost install-app erpnext
 ```
 
 Note: Both frappe and erpnext must be on branch with same name. e.g. version-14
@@ -229,28 +229,28 @@ bench start
 ```
 
 You can now login with user `Administrator` and the password you choose when creating the site.
-Your website will now be accessible at location [mysite.localhost:8000](http://mysite.localhost:8000)
+Your website will now be accessible at location [development.localhost:8000](http://development.localhost:8000)
 Note: To start bench with debugger refer section for debugging.
 
 ### Setup bench / new site using script
 
 Most developers work with numerous clients and versions. Moreover, apps may be required to be installed by everyone on the team working for a client.
 
-This is simplified using a script to automate the process of creating a new bench / site and installing the required apps.
+This is simplified using a script to automate the process of creating a new bench / site and installing the required apps. `Administrator` password is for created sites is `admin`.
 
 Sample `apps-example.json` is used by default, it installs erpnext on current stable release. To install custom apps, copy the `apps-example.json` to custom json file and make changes to list of apps. Pass this file to the `installer.py` script.
 
 > You may have apps in private repos which may require ssh access. You may use SSH from your home directory on linux (configurable in docker-compose.yml).
 
 ```shell
-python installer.py
+python installer.py  #pass --db-type postgres for postgresdb
 ```
 
 For command help
 
 ```shell
 python installer.py --help
-usage: installer.py [-h] [-j APPS_JSON] [-b BENCH_NAME] [-s SITE_NAME] [-r FRAPPE_REPO] [-t FRAPPE_BRANCH] [-p PY_VERSION] [-n NODE_VERSION] [-v]
+usage: installer.py [-h] [-j APPS_JSON] [-b BENCH_NAME] [-s SITE_NAME] [-r FRAPPE_REPO] [-t FRAPPE_BRANCH] [-p PY_VERSION] [-n NODE_VERSION] [-v] [-a ADMIN_PASSWORD] [-d DB_TYPE]
 
 options:
   -h, --help            show this help message and exit
@@ -263,18 +263,24 @@ options:
   -r FRAPPE_REPO, --frappe-repo FRAPPE_REPO
                         frappe repo to use, default: https://github.com/frappe/frappe
   -t FRAPPE_BRANCH, --frappe-branch FRAPPE_BRANCH
-                        frappe repo to use, default: version-14
+                        frappe repo to use, default: version-15
   -p PY_VERSION, --py-version PY_VERSION
                         python version, default: Not Set
   -n NODE_VERSION, --node-version NODE_VERSION
                         node version, default: Not Set
   -v, --verbose         verbose output
+  -a ADMIN_PASSWORD, --admin-password ADMIN_PASSWORD
+                        admin password for site, default: admin
+  -d DB_TYPE, --db-type DB_TYPE
+                        Database type to use (e.g., mariadb or postgres)
 ```
 
 A new bench and / or site is created for the client with following defaults.
 
 - MariaDB root password: `123`
 - Admin password: `admin`
+
+> To use Postegres DB, comment the mariabdb service and uncomment postegres service.
 
 ### Start Frappe with Visual Studio Code Python Debugging
 
@@ -293,8 +299,7 @@ honcho start \
     watch \
     schedule \
     worker_short \
-    worker_long \
-    worker_default
+    worker_long
 ```
 
 Alternatively you can use the VSCode launch configuration "Honcho SocketIO Watch Schedule Worker" which launches the same command as above.
@@ -312,7 +317,7 @@ For advance vscode configuration in the devcontainer, change the config files in
 You can launch a simple interactive shell console in the terminal with:
 
 ```shell
-bench --site mysite.localhost console
+bench --site development.localhost console
 ```
 
 More likely, you may want to launch VSCode interactive console based on Jupyter kernel.
@@ -327,12 +332,12 @@ The first step is installing and updating the required software. Usually the fra
 
 Then, run the command `Python: Show Python interactive window` from the VSCode command palette.
 
-Replace `mysite.localhost` with your site and run the following code in a Jupyter cell:
+Replace `development.localhost` with your site and run the following code in a Jupyter cell:
 
 ```python
 import frappe
 
-frappe.init(site='mysite.localhost', sites_path='/workspace/development/frappe-bench/sites')
+frappe.init(site='development.localhost', sites_path='/workspace/development/frappe-bench/sites')
 frappe.connect()
 frappe.local.lang = frappe.db.get_default('lang')
 frappe.db.connect()
@@ -381,3 +386,25 @@ volumes:
 ```
 
 Access the service by service name from the `frappe` development container. The above service will be accessible via hostname `postgresql`. If ports are published on to host, access it via `localhost:5432`.
+
+## Using Cypress UI tests
+
+To run cypress based UI tests in a docker environment, follow the below steps:
+
+1. Install and setup X11 tooling on VM using the script `install_x11_deps.sh`
+
+```shell
+  sudo bash ./install_x11_deps.sh
+```
+
+This script will install required deps, enable X11Forwarding and restart SSH daemon and export `DISPLAY` variable.
+
+2. Run X11 service `startx` or `xquartz`
+3. Start docker compose services.
+4. SSH into ui-tester service using `docker exec..` command
+5. Export CYPRESS_baseUrl and other required env variables
+6. Start Cypress UI console by issuing `cypress run command`
+
+> More references : [Cypress Official Documentation](https://www.cypress.io/blog/2019/05/02/run-cypress-with-a-single-docker-command)
+
+> Ensure DISPLAY environment is always exported.
