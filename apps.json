@@ -1,14 +1,14 @@
 [
   {
     "url": "https://github.com/frappe/erpnext",
-    "branch": "version-14"
+    "branch": "version-15"
   },
   {
     "url": "https://github.com/frappe/hrms",
-    "branch": "version-14"
+    "branch": "version-15"
   },
   {
     "url": "https://${DE_MACRS_PAT}@github.com/desiredeffect/de_macrs",
-    "branch": "main"
+    "branch": "erp15refactor"
   }
 ]
