@@ -17,7 +17,7 @@ Copy the example docker environment file to `.env`:
 cp example.env .env
 ```
 
-Note: To know more about environment variable [read here](./images-and-compose-files.md#configuration). Set the necessary variables in the `.env` file.
+Note: To know more about environment variable [read here](./environment-variables.md). Set the necessary variables in the `.env` file.
 
 ## Generate docker-compose.yml for variety of setups
 
@@ -40,8 +40,7 @@ Instead of `docker compose config`, you can directly use `docker compose up` to 
 
 ### Setup Frappe without proxy and external MariaDB and Redis
 
-In this case make sure you've set `DB_HOST`, `DB_PORT`, `REDIS_CACHE`, `REDIS_QUEUE` and `REDIS_SOCKETIO`
-environment variables or the `configurator` will fail.
+In this case make sure you've set `DB_HOST`, `DB_PORT`, `REDIS_CACHE` and `REDIS_QUEUE` environment variables or the `configurator` will fail.
 
 ```sh
 # Generate YAML
@@ -53,8 +52,7 @@ docker compose --project-name <project-name> -f ~/gitops/docker-compose.yml up -
 
 ### Setup ERPNext with proxy and external MariaDB and Redis
 
-In this case make sure you've set `DB_HOST`, `DB_PORT`, `REDIS_CACHE`, `REDIS_QUEUE` and `REDIS_SOCKETIO`
-environment variables or the `configurator` will fail.
+In this case make sure you've set `DB_HOST`, `DB_PORT`, `REDIS_CACHE` and `REDIS_QUEUE` environment variables or the `configurator` will fail.
 
 ```sh
 # Generate YAML
