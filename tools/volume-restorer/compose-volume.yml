@@ -1,0 +1,11 @@
+version: '3'
+services:
+  data-restoration-service:
+    image: alpine
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - db-data:/target
+
+volumes:
+  db-data:
+    #name: de-erpnext_db-data
