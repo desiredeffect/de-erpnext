@@ -1,6 +1,6 @@
 #!/bin/bash
-# Shell script to create datestamped & labelled tarballs of volumes associated with a container
 
+# Shell script to create datestamped & labelled tarballs of volumes associated with a container
 # Script will automatically ignore anonymous volumes
 # Script will generate a metadata file buried in the tar file for later use in rebuilding the volume
 
@@ -56,7 +56,7 @@ for volume in $volumes; do
         -v ${volume_name}:/origin \
         -v $backup_dir:/destination \
         alpine \
-        tar -czf /destination/${backup_file} /origin /destination/"${volume_name}_volume_info.json"
+        tar -czf /destination/${backup_file} -C /origin . /destination/"${volume_name}_volume_info.json"
 
     echo "Backup of volume $volume_name saved to $backup_file"
 done

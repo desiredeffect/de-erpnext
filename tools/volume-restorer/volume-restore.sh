@@ -1,34 +1,69 @@
-#!/bin/sh
-if [ $# -ne 1 ]; then
-    echo "Correct use: $0 <backup_file.tar.gz>"
+#!/bin/bash
+# Requirement: JQ library
+
+# This is a script to be used in conjunction with our volume backup scripts
+# Its purpose is to restore volumes from a tarball
+# while also restoring the labels used by docker as metadata for volumes
+
+# Usage: script name <tar.gz file made by our volume archiver tool>
+
+# Setting a couple of constants for later changing
+archive_prefix=de-erpnext_
+archive_postfix=_backup
+file_postfix=_volume_info.json
+
+# Check if the tarball file is provided as an argument
+if [ -z "$1" ]; then
+    echo "Usage: $0 <tarball_file>"
     exit 1
 fi
 
-# Create a temporary directory for data restoration
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    echo "jq is not installed. Please install before running"
+    exit 1
+fi
+
+# Check if the specified tarball file exists
+tarball_file="$1"
+if [ ! -f "$tarball_file" ]; then
+    echo "Error: Tarball file '$tarball_file' not found."
+    exit 1
+fi
+
+# Create a temporary directory that will auto remove on exit
 temp_dir=$(mktemp -d)
+trap 'rm -rf "$temp_dir"' EXIT
 
-# Ensure the temporary directory was created
-if [ ! -d "$temp_dir" ]; then
-    echo "Error: Failed to create a temporary directory."
-    exit 1
+# Extract the contents of the tarball into the temporary directory
+sudo tar --same-owner -p -zxf "$tarball_file" -C "$temp_dir"
+
+# Pulling our data volume name
+volume_name=$(echo "$tarball_file" | grep -oP "${archive_prefix}\K.*?(?=${archive_postfix})")
+
+#Specify the metadata file path in the temporary directory
+metadata_file="$temp_dir/destination/$archive_prefix$volume_name$file_postfix"
+
+# Check if the metadata file exists
+if [ -f "$metadata_file" ]; then
+    # Extract labels from metadata file
+    labels=$(jq -r '.[0].Labels | to_entries | map("--label \(.key)=\(.value)") | .[]' $metadata_file)
+else
+    labels=""
 fi
 
-backup_file_tar="$1"
+# Remove our little custom metadata file
+sudo rm -r $temp_dir/destination
 
-# Extract the backup data to the temporary directory
-tar -zxvf "$backup_file_tar" -C "$temp_dir"
+#Make our volume with our 
+docker volume create $labels $archive_prefix$volume_name
 
-export COMPOSE_PROJECT_NAME=de-erpnext
+docker run --rm \
+    -v $temp_dir:/archive \
+    -v $archive_prefix$volume_name:/target \
+    alpine \
+    sh -c "cp -aR /archive/* /target/"
 
-# Run the Docker Compose process for data restoration using the temporary directory
-docker compose -f compose-volume.yml up #-d
+sudo rm -r $temp_dir
 
-# Wait for the restoration process to complete
-# This will be necessary if we end up needing the -d flag
-#sleep 5
-
-# Clean up the containers and the temporary directory after restoration
-docker compose -f compose-volume.yml down
-rm -r "$temp_dir"
-
-unset COMPOSE_PROJECT_NAME
+echo "Volume '$volume_name' restored from '$tarball_file'"
