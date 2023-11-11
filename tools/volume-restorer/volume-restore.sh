@@ -5,6 +5,8 @@
 # Its purpose is to restore volumes from a tarball
 # while also restoring the labels used by docker as metadata for volumes
 
+# NOTE - Requires sudo permissions to preserve ownerships when extracting from archives
+
 # Usage: script name <tar.gz file made by our volume archiver tool>
 
 # Setting a couple of constants for later changing
@@ -33,37 +35,40 @@ fi
 
 # Create a temporary directory that will auto remove on exit
 temp_dir=$(mktemp -d)
-trap 'rm -rf "$temp_dir"' EXIT
+trap 'sudo rm -rf "$temp_dir"' EXIT
 
 # Extract the contents of the tarball into the temporary directory
 sudo tar --same-owner -p -zxf "$tarball_file" -C "$temp_dir"
 
-# Pulling our data volume name
-volume_name=$(echo "$tarball_file" | grep -oP "${archive_prefix}\K.*?(?=${archive_postfix})")
-
-#Specify the metadata file path in the temporary directory
-metadata_file="$temp_dir/destination/$archive_prefix$volume_name$file_postfix"
+# Grab our metadata file
+meta_file=$(find $temp_dir/destination -type f -name "*_volume_info.json")
 
 # Check if the metadata file exists
-if [ -f "$metadata_file" ]; then
+if [ -f "$meta_file" ]; then
     # Extract labels from metadata file
-    labels=$(jq -r '.[0].Labels | to_entries | map("--label \(.key)=\(.value)") | .[]' $metadata_file)
+    labels=$(jq -r '.[0].Labels | to_entries | map("--label \(.key)=\(.value)") | .[]' $meta_file)
 else
-    labels=""
+    echo "Error: Volume metadata file $meta_file not found in archive"
+    exit 1
 fi
+
+# Grab chunks out of the json data, could consense this down to jus the vol_title
+vol_project=$(jq -r '.[0].Labels."com.docker.compose.project"' $meta_file)
+vol_name=$(jq -r '.[0].Labels."com.docker.compose.volume"' $meta_file)
+vol_title=$(jq -r '.[0]."Name"' $meta_file)
 
 # Remove our little custom metadata file
 sudo rm -r $temp_dir/destination
 
 #Make our volume with our 
-docker volume create $labels $archive_prefix$volume_name
+docker volume create $labels $vol_title
 
 docker run --rm \
     -v $temp_dir:/archive \
-    -v $archive_prefix$volume_name:/target \
+    -v $vol_title:/target \
     alpine \
     sh -c "cp -aR /archive/* /target/"
 
 sudo rm -r $temp_dir
 
-echo "Volume '$volume_name' restored from '$tarball_file'"
+echo "Volume '$vol_name' from project '$vol_project' restored as '$vol_title' from '$tarball_file'"
