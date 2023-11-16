@@ -7,16 +7,22 @@
 
 # NOTE - Requires sudo permissions to preserve ownerships when extracting from archives
 
-# Usage: script name <tar.gz file made by our volume archiver tool>
+# Usage: script_name <archive file> <optional argument>
+# Arguments
+    # <archive file>: the tar.gz archive file made by our archiving process (for volume metadata file
+    # <optional argument
 
 # Setting a couple of constants for later changing
 archive_prefix=de-erpnext_
 archive_postfix=_backup
 file_postfix=_volume_info.json
 
-# Check if the tarball file is provided as an argument
+# Check if we have appropriate argument counts (between 1 & 2)
 if [ -z "$1" ]; then
     echo "Usage: $0 <tarball_file>"
+    exit 1
+elif [ "$#" -gt 2 ]; then
+    echo "Error: Too many arguments provided (max 1 mandatory, 1 optional)"
     exit 1
 fi
 
@@ -45,7 +51,6 @@ meta_file=$(find $temp_dir/destination -type f -name "*_volume_info.json")
 
 # Check if the metadata file exists
 if [ -f "$meta_file" ]; then
-    # Extract labels from metadata file
     labels=$(jq -r '.[0].Labels | to_entries | map("--label \(.key)=\(.value)") | .[]' $meta_file)
 else
     echo "Error: Volume metadata file $meta_file not found in archive"
@@ -55,12 +60,19 @@ fi
 # Grab chunks out of the json data, could consense this down to jus the vol_title
 vol_project=$(jq -r '.[0].Labels."com.docker.compose.project"' $meta_file)
 vol_name=$(jq -r '.[0].Labels."com.docker.compose.volume"' $meta_file)
-vol_title=$(jq -r '.[0]."Name"' $meta_file)
+
+#Check to see if optional second argument has been provided, if so, replace appropiate fields in the meta file instance
+if [ -n "$2" ]; then
+    vol_proj_override="$2"
+    vol_title="${vol_proj_override}_${vol_name}"
+else
+    vol_title=$(jq -r '.[0]."Name"' $meta_file)
+fi
 
 # Remove our little custom metadata file
 sudo rm -r $temp_dir/destination
 
-#Make our volume with our 
+#Make our volume with our titling
 docker volume create $labels $vol_title
 
 docker run --rm \
