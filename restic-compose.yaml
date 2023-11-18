@@ -1,0 +1,43 @@
+version: "3.7"
+services:
+  backup:
+    # image: frappe/erpnext:${VERSION}
+    image: grumpleimage_001
+    restart: on-failure # ADDED
+    #entrypoint: ["bash", "-c"]
+    #command:
+    #  - |
+    #    bench --site all backup
+        ## Uncomment for restic snapshots.
+        # restic snapshots || restic init
+        # restic backup sites
+        ## Uncomment to keep only last n=30 snapshots.
+        # restic forget --group-by=paths --keep-last=30 --prune
+    environment:
+      # Set correct environment variables for restic
+      #- RESTIC_REPOSITORY=s3:https://s3.endpoint.com/restic
+      - RESTIC_REPOSITORY=/srv/restic-repo
+      #- AWS_ACCESS_KEY_ID=access_key
+      #- AWS_SECRET_ACCESS_KEY=secret_access_key
+      - RESTIC_PASSWORD=restic_password
+    volumes:
+      - "sites:/home/frappe/frappe-bench/sites"
+      - "restic-backup:/srv/restic-repo"
+    networks:
+      - erpnext-network
+
+networks:
+  erpnext-network:
+    external: true
+    # name: ${PROJECT_NAME:-erpnext}_default
+    name: forwardtest_erpnet
+
+volumes:
+  sites:
+    external: true
+    # name: ${PROJECT_NAME:-erpnext}_sites
+    name: forwardtest_sites
+  restic-backup:
+
+# 1) As of now we have a secondary volume for taking our backups - this can be done away with ling term
+# 2) this has been made entirely namualby commenting out the entrypoint and command levels
