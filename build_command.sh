@@ -14,7 +14,7 @@ docker build \
   --build-arg=PYTHON_VERSION=3.11.6 \
   --build-arg=NODE_VERSION=18.18.2 \
   --build-arg=APPS_JSON_BASE64=$APPS_JSON_BASE64 \
-  --tag=desiredeffect/de-local:$DE_SITE_VERSION \
+  --tag=desiredeffect/erpnext-custom:$DE_SITE_VERSION \
   --file=images/custom/Containerfile .
 
   #--tag=desiredeffect/erpnext-de:$ERPNEXT_VERSION \

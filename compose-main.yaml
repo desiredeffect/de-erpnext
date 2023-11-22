@@ -1,17 +1,21 @@
+# Fragment for our image title - needs to match either a local image build or a dockerhub image repo
 x-customizable-image: &customizable_image
-  # As of now, pull policy means we have to build locally before we run our compose (use the build script)
-  image: desiredeffect/de-local:$DE_SITE_VERSION
+  # As of now, pull policy means we have to build locally before we run our compose (use the build with an appropriately set $DE_SITE_VERSION)
+  image: desiredeffect/erpnext-custom:$DE_SITE_VERSION
   pull_policy: never
 
+# Fragment for dependency - basically everything needs the configurator to close outr\
 x-depends-on-configurator: &depends_on_configurator
   depends_on:
     configurator:
       condition: service_completed_successfully
 
+# Fragment for our default network
 x-de-defaultnetworks: &networks
   networks:
     - erpnet
 
+# Aggregator Fragment of our baseline settings for most core containers
 x-backend-defaults: &backend_defaults
   <<: [*depends_on_configurator, *customizable_image, *networks]
   restart: on-failure
@@ -21,6 +25,8 @@ x-backend-defaults: &backend_defaults
     #- assets:/home/frappe/frappe-bench/sites/assets
 
 services:
+  ## Core Services
+  # configurator - ensures site has proper database & redis host/port settings
   configurator:
     <<: *backend_defaults
     restart: "no"
@@ -45,6 +51,7 @@ services:
       SOCKETIO_PORT: 9000
     depends_on: {}
 
+  # create-site - generates site with default app settings & setup (if none by name $SITE exists)
   create-site:
     <<: *backend_defaults
     restart: "no"
@@ -79,9 +86,11 @@ services:
           --install-app de_macrs \
           --set-default;
 
+  # backend - werkzeug server
   backend:
     <<: *backend_defaults
 
+  #nginx server that serves JS/CSS assets & routes incoming requests - also adds traefik labels
   frontend:
     <<: *customizable_image
     restart: on-failure
@@ -100,7 +109,6 @@ services:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
       #- assets:/home/frappe/frappe-bench/sites/assets
-    
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=rproxy"
@@ -117,6 +125,35 @@ services:
       - erpnet
       - rproxy
 
+  # Node server that runs Socket.IO
+  websocket:
+    <<: [*depends_on_configurator, *customizable_image, *networks]
+    restart: on-failure
+    command:
+      - node
+      - /home/frappe/frappe-bench/apps/frappe/socketio.js
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+      #- assets:/home/frappe/frappe-bench/sites/assets
+
+  # Python server that run job queues using rq - gobbles short & default
+  queue-short:
+    <<: *backend_defaults
+    command: bench worker --queue short,default
+
+  # Python server that run job queues using rq - gobbles short, default & long
+  queue-long:
+    <<: *backend_defaults
+    command: bench worker --queue long,default,short
+
+  # Python server that runs tasks with schedule
+  scheduler:
+    <<: *backend_defaults
+    command: bench schedule
+
+  ## Non-Core Services
+  # Runs a Mariadb server
   db:
     <<: *networks
     image: mariadb:10.6
@@ -135,35 +172,14 @@ services:
     volumes:
       - db-data:/var/lib/mysql
 
-  websocket:
-    <<: [*depends_on_configurator, *customizable_image, *networks]
-    restart: on-failure
-    command:
-      - node
-      - /home/frappe/frappe-bench/apps/frappe/socketio.js
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-      #- assets:/home/frappe/frappe-bench/sites/assets
-
-  queue-short:
-    <<: *backend_defaults
-    command: bench worker --queue short,default
-
-  queue-long:
-    <<: *backend_defaults
-    command: bench worker --queue long,default,short
-
-  scheduler:
-    <<: *backend_defaults
-    command: bench schedule
-
+  # Runs a redis queue + socket io
   redis-queue:
     <<: *backend_defaults
     image: redis:6.2-alpine
     volumes:
       - redis-queue-data:/data
 
+  # Runs a redis cache 
   redis-cache:
     <<: *backend_defaults
     image: redis:6.2-alpine
