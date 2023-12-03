@@ -5,7 +5,7 @@
 
 # Run a replacement on the token title with SED & export as a base64 var
 json_contents=$(cat ./apps.json)
-json_contents=$(echo "$json_contents" | sed "s/\${DE_MACRS_PAT}/$DE_MACRS_PAT/g")
+json_contents=$(echo "$json_contents" | sed "s/\${PAT_DESIRED_EFFECT}/$PAT_DESIRED_EFFECT/g")
 export APPS_JSON_BASE64=$(echo $json_contents | base64 -w 0)
 
 docker build \

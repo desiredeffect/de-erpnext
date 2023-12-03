@@ -8,7 +8,11 @@
     "branch": "version-15"
   },
   {
-    "url": "https://${DE_MACRS_PAT}@github.com/desiredeffect/de_macrs",
+    "url": "https://${PAT_DESIRED_EFFECT}@github.com/desiredeffect/erpnext-de-customs",
+    "branch": "main"
+  },
+  {
+    "url": "https://${PAT_DESIRED_EFFECT}@github.com/desiredeffect/de_macrs",
     "branch": "erp15refactor"
   }
 ]

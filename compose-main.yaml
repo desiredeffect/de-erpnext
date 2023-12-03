@@ -84,6 +84,7 @@ services:
           --install-app erpnext \
           --install-app hrms \
           --install-app de_macrs \
+          --install-app de_customs \
           --set-default;
 
   # backend - werkzeug server
