@@ -57,7 +57,7 @@ else
     exit 1
 fi
 
-# Grab chunks out of the json data, could consense this down to jus the vol_title
+# Grab chunks out of the json data, could consense this down to just the vol_title
 vol_project=$(jq -r '.[0].Labels."com.docker.compose.project"' $meta_file)
 vol_name=$(jq -r '.[0].Labels."com.docker.compose.volume"' $meta_file)
 
@@ -69,11 +69,17 @@ else
     vol_title=$(jq -r '.[0]."Name"' $meta_file)
 fi
 
+# This check ensures we don't accidentally start overwriting an existing volume
+if [ "$(docker volume ls -q -f name=$vol_title)" ]; then
+    echo "Error: Volume $vol_title already exists."
+    exit 1
+else
+    #Make our volume with our titling
+    docker volume create $labels $vol_title
+fi
+
 # Remove our little custom metadata file
 sudo rm -r $temp_dir/destination
-
-#Make our volume with our titling
-docker volume create $labels $vol_title
 
 docker run --rm \
     -v $temp_dir:/archive \
