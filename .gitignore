@@ -1,3 +1,6 @@
+# Environment Variables
+.env
+
 # mounted volume
 sites
 
@@ -23,5 +26,5 @@ development/*
 __pycache__
 venv
 
-# .env so that private vars are not tracked
-.env
+# NodeJS
+node_modules
