@@ -9,7 +9,7 @@ This sequence assumes you've already validated / run checks in a test-bed & are 
 	3. (especially if it's been a while) check that the schema of `.env` and `de-example.env` match)
 3. Update / set up your `apps.json` - set your app branch identifiers to the release you're targeting.
 4. Ensure your `build_command.sh` is set how you want (especially if you're changing Node or python environments, you might want to enable the `--no-cache` option)
-5. Run `build_command.sh` watch the output of the process to make sure that things are proceeding correctly. If all goes well the process should take 2-4 minutes or so end-to-end (generally on the longer side of that range if you've enabled `--no-cache` or haven't run a build in this build environment before)
+5. Run `build_command.sh` watch the output of the process to make sure that things are proceeding correctly. If all goes well the process should take 4-7 minutes or so end-to-end (generally on the longer side of that range if you've enabled `--no-cache` or haven't run a build in this build environment before)
 ## Update Procedure
 
 After you've gotten your new image, you'll need to spin-down your site and then spin up the new one

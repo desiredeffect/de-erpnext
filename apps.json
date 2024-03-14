@@ -1,18 +1,22 @@
 [
   {
     "url": "https://github.com/frappe/erpnext",
-    "branch": "version-15"
+    "branch": "v15.17.0"
   },
   {
     "url": "https://github.com/frappe/hrms",
-    "branch": "version-15"
+    "branch": "v15.13.1"
+  },
+  {
+    "url": "https://github.com/frappe/payments",
+    "branch": "develop"
   },
   {
     "url": "https://${PAT_DESIRED_EFFECT}@github.com/desiredeffect/erpnext-de-customs",
-    "branch": "main"
+    "branch": "v0.0.5"
   },
   {
     "url": "https://${PAT_DESIRED_EFFECT}@github.com/desiredeffect/de_macrs",
-    "branch": "erp15refactor"
+    "branch": "v0.0.4"
   }
 ]
